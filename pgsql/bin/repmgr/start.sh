@@ -12,6 +12,11 @@ fi
 echo ">>> Registering node with role $NODE_TYPE"
 gosu postgres repmgr $NODE_TYPE register --force || echo ">>>>>> Can't re-register node. Means it has been already done before!"
 
+if [[ "$NODE_TYPE" == "standby" ]]; then
+	echo ">>> Waiting for replication"
+	sleep 5
+fi
+
 echo ">>> Starting repmgr daemon..."
 rm -rf /tmp/repmgrd.pid
 gosu postgres repmgrd -vvv --pid-file=/tmp/repmgrd.pid
