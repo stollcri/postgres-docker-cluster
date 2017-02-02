@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+MAX_TRIES=25
+SLEEP_TIME=5
+
+echo ">>> Waiting on docker-entrypoint-initdb.d scripts, will try $MAX_TRIES times with delay $SLEEP_TIME seconds"
+while [[ "$MAX_TRIES" != "0" ]]
+do
+    if [[ -f /tmp/initdb.lock ]]; then
+        echo ">>>>>> Db initializing (will try $MAX_TRIES times)"
+        sleep "$SLEEP_TIME"
+    else
+        echo ">>>>>> Db initialized"
+        exit 0
+    fi
+    MAX_TRIES=`expr "$MAX_TRIES" - 1`
+done
+
+echo ">>> docker-entrypoint-initdb.d scripts not complete, even after $MAX_TRIES tries!"
+exit 1

@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
 DB_EXISTS=''
-MAX_TRIES=50
-SLEEP_TIME=5
-
+MAX_TRIES=25
+SLEEP_TIME=15
 
 HOST=$1
 PORT=$2
@@ -14,14 +13,23 @@ DB=$5
 echo ">>> Wait db $DB on $HOST:$PORT(user: $USER,password: *******), will try $MAX_TRIES times with delay $SLEEP_TIME seconds"
 while [[ "$MAX_TRIES" != "0" ]]
 do
-    DB_EXISTS=`PGPASSWORD=$PASSWORD psql --username "$USER" -h $HOST -p $PORT -tAc "SELECT 1 FROM pg_database WHERE datname='$DB'" template1`
-    if [[ "$DB_EXISTS" != "1" ]]; then
-        echo ">>>>>> Db $DB is still not accessable on $HOST:$PORT (will try $MAX_TRIES times)"
-        sleep "$SLEEP_TIME"
-    else
-        echo ">>>>>> Db $DB exists on $HOST:$PORT!"
-        exit 0
-    fi
+	REMOTE_READY=1
+	if [[ "$HOST" != "$CLUSTER_NODE_NETWORK_NAME" ]]; then
+		REMOTE_READY=`runuser -l postgres -c "ssh $HOST 'if [ -f /tmp/initdb.lock ]; then echo 0; else echo 1; fi'"`
+		sleep "$SLEEP_TIME"
+	fi
+	if [[ "$REMOTE_READY" == "1" ]]; then
+	    DB_EXISTS=`PGPASSWORD=$PASSWORD psql --username "$USER" -h $HOST -p $PORT -tAc "SELECT 1 FROM pg_database WHERE datname='$DB'" template1`
+	    if [[ "$DB_EXISTS" != "1" ]]; then
+	        echo ">>>>>> Db $DB is still not accessable on $HOST:$PORT (will try $MAX_TRIES times)"
+	        sleep "$SLEEP_TIME"
+	    else
+	        echo ">>>>>> Db $DB exists on $HOST:$PORT!"
+	        exit 0
+	    fi
+	else
+		echo ">>>>>> Db $DB on $HOST:$PORT is still initializing (will try $MAX_TRIES times)"
+	fi
     MAX_TRIES=`expr "$MAX_TRIES" - 1`
 done
 
