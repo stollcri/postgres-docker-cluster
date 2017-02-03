@@ -3,7 +3,8 @@ set -e
 CONFIG_FILE='/etc/pgpool2/pgpool.conf'
 
 echo ">>> Opening access from all hosts by md5 in /etc/pgpool2/pool_hba.conf" #TODO: more configurable?
-echo "host all all 0.0.0.0/0 md5" > /etc/pgpool2/pool_hba.conf
+# echo "host all all 0.0.0.0/0 md5" > /etc/pgpool2/pool_hba.conf
+echo "host all all 0.0.0.0/0 trust" > /etc/pgpool2/pool_hba.conf
 
 echo ">>> Adding user $PCP_USER for PCP"
 echo "$PCP_USER:`pg_md5 $PCP_PASSWORD`" >> /etc/pgpool2/pcp.conf
